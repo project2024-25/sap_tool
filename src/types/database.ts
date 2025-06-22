@@ -1,5 +1,5 @@
 // src/types/database.ts
-// Enhanced database types with authentication support
+// Consolidated database types with authentication support
 
 import { createClient } from '@supabase/supabase-js'
 
@@ -35,7 +35,7 @@ export type TableField = {
   field_order: number
 }
 
-// Enhanced UserProfile type (PRD-compliant)
+// Consolidated UserProfile type (PRD-compliant)
 export type UserProfile = {
   id: string
   email: string
@@ -43,10 +43,10 @@ export type UserProfile = {
   subscription_type: 'free' | 'pro' | 'team' | 'enterprise'
   subscription_start: string | null
   subscription_end: string | null
-  stripe_customer_id: string | null
-  daily_export_count: number
-  last_export_reset: string
-  conversion_trigger_views: Record<string, any>
+  stripe_customer_id?: string | null
+  daily_export_count?: number
+  last_export_reset?: string
+  conversion_trigger_views?: Record<string, any>
 }
 
 // Additional types for search logging (PRD: unlimited search tracking)

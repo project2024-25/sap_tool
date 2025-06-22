@@ -1,18 +1,36 @@
 // src/lib/auth-context.tsx
-// Simple authentication context using your existing Supabase setup
+// Updated to work with your current database schema
 
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
 import { User } from '@supabase/supabase-js'
-import { supabase, getUserProfile, createUserProfile, UserProfile } from '@/types/database'
+import { supabase } from '@/types/database'
+
+interface AuthError {
+  message: string;
+  status?: number;
+}
+
+interface UserProfile {
+  id: string;
+  email: string;
+  created_at: string;
+  subscription_type: 'free' | 'pro' | 'team' | 'enterprise';
+  subscription_start?: string | null;
+  subscription_end?: string | null;
+  stripe_customer_id?: string | null;
+  daily_export_count?: number;
+  last_export_reset?: string;
+  conversion_trigger_views?: Record<string, unknown>;
+}
 
 interface AuthContextType {
   user: User | null
   userProfile: UserProfile | null
   loading: boolean
-  signUp: (email: string, password: string) => Promise<{ error: any }>
-  signIn: (email: string, password: string) => Promise<{ error: any }>
+  signUp: (email: string, password: string) => Promise<{ error: AuthError | null }>
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   isAuthenticated: boolean
 }
@@ -24,6 +42,81 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Helper function to get user profile
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      
+      if (error) {
+        console.log('User profile not found, will create one:', error.message)
+        return null
+      }
+      
+      return data
+    } catch (error) {
+      console.log('Error fetching user profile:', error)
+      return null
+    }
+  }
+
+  // Helper function to create user profile with explicit ID
+  const createUserProfile = async (userId: string, email: string): Promise<UserProfile | null> => {
+    try {
+      // First, delete any existing profile with different ID but same email
+      await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('email', email)
+        .neq('id', userId)
+
+      // Create new profile with the correct user ID
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .insert({
+          id: userId, // Explicitly set the ID to match auth.users.id
+          email: email,
+          subscription_type: 'free',
+          daily_export_count: 0,
+          last_export_reset: new Date().toISOString().split('T')[0],
+          conversion_trigger_views: {}
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.log('Could not create user profile:', error.message)
+        // Return a default profile if creation fails
+        return {
+          id: userId,
+          email: email,
+          created_at: new Date().toISOString(),
+          subscription_type: 'free',
+          daily_export_count: 0,
+          last_export_reset: new Date().toISOString().split('T')[0],
+          conversion_trigger_views: {}
+        }
+      }
+      
+      return data
+    } catch (error) {
+      console.log('Error creating user profile:', error)
+      // Return a default profile
+      return {
+        id: userId,
+        email: email,
+        created_at: new Date().toISOString(),
+        subscription_type: 'free',
+        daily_export_count: 0,
+        last_export_reset: new Date().toISOString().split('T')[0],
+        conversion_trigger_views: {}
+      }
+    }
+  }
+
   useEffect(() => {
     // Get initial auth state
     const getInitialAuth = async () => {
@@ -32,14 +125,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(user)
         
         if (user) {
-          const profile = await getUserProfile(user.id)
+          let profile = await fetchUserProfile(user.id)
           if (!profile && user.email) {
-            // Create profile if it doesn't exist
-            const newProfile = await createUserProfile(user.id, user.email)
-            setUserProfile(newProfile)
-          } else {
-            setUserProfile(profile)
+            // Create profile with the correct user ID
+            profile = await createUserProfile(user.id, user.email)
           }
+          setUserProfile(profile)
         }
       } catch (error) {
         console.error('Error getting initial auth:', error)
@@ -57,13 +148,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         
         if (session?.user) {
-          const profile = await getUserProfile(session.user.id)
+          let profile = await fetchUserProfile(session.user.id)
           if (!profile && session.user.email) {
-            const newProfile = await createUserProfile(session.user.id, session.user.email)
-            setUserProfile(newProfile)
-          } else {
-            setUserProfile(profile)
+            profile = await createUserProfile(session.user.id, session.user.email)
           }
+          setUserProfile(profile)
         } else {
           setUserProfile(null)
         }
@@ -79,7 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -87,11 +176,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       })
 
-      console.log('Sign up result:', { data, error })
-      return { error }
+      return { error: error ? { message: error.message } : null }
     } catch (error) {
       console.error('Sign up error:', error)
-      return { error }
+      return { error: { message: 'Sign up failed' } }
     } finally {
       setLoading(false)
     }
@@ -101,16 +189,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true)
     
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       })
 
-      console.log('Sign in result:', { data, error })
-      return { error }
+      return { error: error ? { message: error.message } : null }
     } catch (error) {
       console.error('Sign in error:', error)
-      return { error }
+      return { error: { message: 'Sign in failed' } }
     } finally {
       setLoading(false)
     }

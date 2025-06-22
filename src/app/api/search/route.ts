@@ -20,10 +20,13 @@ function setCachedResults(query: string, results: any[]) {
     timestamp: Date.now()
   });
   
-  // Clean old cache entries
+  // Clean old cache entries - Fixed TypeScript error
   if (searchCache.size > 100) {
-    const oldestKey = searchCache.keys().next().value;
-    searchCache.delete(oldestKey);
+    const keys = Array.from(searchCache.keys());
+    const oldestKey = keys[0];
+    if (oldestKey) {
+      searchCache.delete(oldestKey);
+    }
   }
 }
 
@@ -182,6 +185,7 @@ async function searchSAPTables(keywords: string[], limit: number = 10) {
       return [];
     }
   }
+
 // Function to generate AI explanation
 async function generateExplanation(query: string, results: any[]): Promise<string> {
   if (results.length === 0) {
@@ -220,7 +224,7 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body: SearchRequest = await request.json();
-    const { query, userId, limit = 10 } = body;
+    const { query, limit = 10 } = body;
 
     // Validate input
     if (!query || query.trim().length === 0) {
@@ -267,7 +271,8 @@ export async function POST(request: NextRequest) {
     // Step 4: Generate AI explanation
     const aiExplanation = await generateExplanation(query, dbResults);
 
-    const finalResults = results.map(r => ({...r}));setCachedResults(query, results);
+    // Cache the results
+    setCachedResults(query, results);
 
     const response: SearchResponse = {
       success: true,
