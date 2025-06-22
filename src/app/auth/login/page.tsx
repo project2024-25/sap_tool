@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, FormEvent } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Database, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { supabase } from '@/types/database';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
 
   const router = useRouter();
-  const supabase = createClientComponentClient();
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

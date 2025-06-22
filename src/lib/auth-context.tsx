@@ -1,5 +1,5 @@
 // src/lib/auth-context.tsx
-// Updated to work with your current database schema
+// FINAL FIX: Removes race condition and handles session properly
 
 'use client'
 
@@ -33,6 +33,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>
   signOut: () => Promise<void>
   isAuthenticated: boolean
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -117,52 +118,104 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const refreshProfile = async () => {
+    if (user) {
+      const profile = await fetchUserProfile(user.id)
+      setUserProfile(profile)
+    }
+  }
+
   useEffect(() => {
-    // Get initial auth state
-    const getInitialAuth = async () => {
+    let mounted = true
+
+    // FIXED: Get initial session first, then handle auth state changes
+    const initializeAuth = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        setUser(user)
+        console.log('Getting initial auth state...')
         
-        if (user) {
-          let profile = await fetchUserProfile(user.id)
-          if (!profile && user.email) {
-            // Create profile with the correct user ID
-            profile = await createUserProfile(user.id, user.email)
+        // Check for existing session first
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError)
+          if (mounted) {
+            setUser(null)
+            setUserProfile(null)
+            setLoading(false)
           }
-          setUserProfile(profile)
+          return
+        }
+
+        console.log('Session:', session ? 'Found' : 'None')
+        
+        if (session?.user && mounted) {
+          console.log('Setting user from session:', session.user.email)
+          setUser(session.user)
+          
+          // Get or create user profile
+          let profile = await fetchUserProfile(session.user.id)
+          if (!profile && session.user.email) {
+            profile = await createUserProfile(session.user.id, session.user.email)
+          }
+          if (mounted) {
+            setUserProfile(profile)
+          }
+        }
+        
+        if (mounted) {
+          setLoading(false)
         }
       } catch (error) {
-        console.error('Error getting initial auth:', error)
-      } finally {
-        setLoading(false)
+        console.error('Error initializing auth:', error)
+        if (mounted) {
+          setUser(null)
+          setUserProfile(null)
+          setLoading(false)
+        }
       }
     }
 
-    getInitialAuth()
+    // Initialize auth
+    initializeAuth()
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email)
-        setUser(session?.user ?? null)
         
-        if (session?.user) {
+        if (!mounted) return
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user)
+          
+          // Get or create user profile
           let profile = await fetchUserProfile(session.user.id)
           if (!profile && session.user.email) {
             profile = await createUserProfile(session.user.id, session.user.email)
           }
           setUserProfile(profile)
-        } else {
+          setLoading(false)
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null)
           setUserProfile(null)
+          setLoading(false)
+        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
+          setUser(session.user)
+          // Keep existing profile or refresh it
+          if (!userProfile) {
+            const profile = await fetchUserProfile(session.user.id)
+            setUserProfile(profile)
+          }
         }
-        
-        setLoading(false)
+        // Ignore INITIAL_SESSION events as we handle initial state above
       }
     )
 
-    return () => subscription.unsubscribe()
-  }, [])
+    return () => {
+      mounted = false
+      subscription.unsubscribe()
+    }
+  }, []) // Remove userProfile dependency to avoid loops
 
   const signUp = async (email: string, password: string) => {
     setLoading(true)
@@ -224,7 +277,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signIn,
     signOut,
-    isAuthenticated: !!user
+    isAuthenticated: !!user && !loading,
+    refreshProfile
   }
 
   return (

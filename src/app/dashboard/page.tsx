@@ -14,7 +14,8 @@ import {
   ExternalLink,
   Download,
   User,
-  Play
+  Play,
+  Loader
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/types/database';
@@ -64,33 +65,12 @@ export default function Dashboard() {
 
   const router = useRouter();
 
-  // Enhanced session persistence check
+  // FIXED: Enhanced auth check that waits for auth context
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Session check error:', error);
-          router.push('/auth/login');
-          return;
-        }
-        
-        if (!session) {
-          const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession();
-          if (refreshError || !refreshedSession) {
-            console.log('No valid session found, redirecting to login');
-            router.push('/auth/login');
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('Session persistence error:', error);
-        router.push('/auth/login');
-      }
-    };
-
+    // Only redirect if auth is NOT loading and user is NOT authenticated
     if (!authLoading && !user) {
-      checkSession();
+      console.log('No valid session found, redirecting to login');
+      router.push('/auth/login');
     }
   }, [authLoading, user, router]);
 
@@ -284,21 +264,24 @@ export default function Dashboard() {
     router.push(`/tables/${tableName}`);
   };
 
+  // FIXED: Show loading state while auth context is loading
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <Loader className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
+  // FIXED: Only show "redirecting" if we're definitely not authenticated
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
+          <Loader className="w-8 h-8 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Redirecting to login...</p>
         </div>
       </div>

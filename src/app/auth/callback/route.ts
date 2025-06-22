@@ -1,6 +1,8 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
+// src/app/auth/callback/route.ts
+// Fixed to use standard supabase-js client without auth-helpers
+
 import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
@@ -17,10 +19,7 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     try {
-      const cookieStore = cookies();
-      const supabase = createRouteHandlerClient({ cookies: () => cookieStore });
-      
-      // Exchange the auth code for a session
+      // Exchange the auth code for a session using standard supabase client
       const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       
       if (error) {
@@ -31,9 +30,6 @@ export async function GET(request: NextRequest) {
       }
 
       if (data.user) {
-        // Check if this is a new user or existing user
-        const isNewUser = data.user.created_at === data.user.email_confirmed_at;
-        
         // Create or update user profile in our database
         const { error: profileError } = await supabase
           .from('user_profiles')

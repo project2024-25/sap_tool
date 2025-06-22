@@ -1,14 +1,36 @@
 // src/types/database.ts
-// Consolidated database types with authentication support
+// FIXED: Added explicit session persistence configuration
 
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// FIXED: Added session persistence configuration
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce',
+    storage: {
+      getItem: (key: string) => {
+        if (typeof window === 'undefined') return null
+        return window.localStorage.getItem(key)
+      },
+      setItem: (key: string, value: string) => {
+        if (typeof window === 'undefined') return
+        window.localStorage.setItem(key, value)
+      },
+      removeItem: (key: string) => {
+        if (typeof window === 'undefined') return
+        window.localStorage.removeItem(key)
+      },
+    },
+  },
+})
 
-// Database types for TypeScript
+// Rest of your types remain the same...
 export type SAPTable = {
   id: number
   table_name: string
@@ -35,7 +57,6 @@ export type TableField = {
   field_order: number
 }
 
-// Consolidated UserProfile type (PRD-compliant)
 export type UserProfile = {
   id: string
   email: string
@@ -49,7 +70,6 @@ export type UserProfile = {
   conversion_trigger_views?: Record<string, any>
 }
 
-// Additional types for search logging (PRD: unlimited search tracking)
 export type SearchLog = {
   id: number
   user_id: string | null
@@ -63,7 +83,6 @@ export type SearchLog = {
   conversion_opportunity: boolean
 }
 
-// Table relationships type
 export type TableRelationship = {
   id: number
   parent_table_id: number
@@ -75,7 +94,6 @@ export type TableRelationship = {
   business_flow_order: number
 }
 
-// Table collections for Pro users
 export type TableCollection = {
   id: string
   user_id: string
@@ -99,6 +117,20 @@ export async function getCurrentUser() {
     return user
   } catch (error) {
     console.error('Unexpected error getting user:', error)
+    return null
+  }
+}
+
+export async function getCurrentSession() {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession()
+    if (error) {
+      console.error('Error getting session:', error)
+      return null
+    }
+    return session
+  } catch (error) {
+    console.error('Unexpected error getting session:', error)
     return null
   }
 }
