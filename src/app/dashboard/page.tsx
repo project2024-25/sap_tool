@@ -281,7 +281,7 @@ export default function Dashboard() {
 
   // Handle viewing table details
   const handleViewTable = (tableName: string) => {
-    alert(`Table details for ${tableName} - Coming soon!`);
+    router.push(`/tables/${tableName}`);
   };
 
   if (authLoading || loading) {
