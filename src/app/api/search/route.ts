@@ -63,6 +63,48 @@ interface SearchResponse {
   error?: string;
 }
 
+// *** NEW: Function to log search to database ***
+async function logSearchToDatabase(userId: string | null, query: string, resultsCount: number, responseTime: number) {
+  try {
+    console.log('📝 Logging search to database:', {
+      userId,
+      query,
+      resultsCount,
+      responseTime
+    });
+
+    if (!userId) {
+      console.log('⚠️ No userId provided, skipping database log');
+      return null;
+    }
+
+    // Insert search log
+    const { data, error } = await supabase
+      .from('search_logs')
+      .insert({
+        user_id: userId,
+        search_query: query,
+        results_count: resultsCount,
+        response_time_ms: responseTime,
+        search_timestamp: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('❌ Failed to log search:', error);
+      throw error;
+    }
+
+    console.log('✅ Search logged successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('💥 Search logging error:', error);
+    // Don't throw error - logging shouldn't break the search functionality
+    return null;
+  }
+}
+
 // Function to extract keywords from user query using OpenAI
 async function extractSearchKeywords(query: string): Promise<string[]> {
   try {
@@ -224,7 +266,9 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body: SearchRequest = await request.json();
-    const { query, limit = 10 } = body;
+    const { query, userId, limit = 10 } = body;
+
+    console.log('🚀 Search API called with:', { query, userId });
 
     // Validate input
     if (!query || query.trim().length === 0) {
@@ -243,11 +287,18 @@ export async function POST(request: NextRequest) {
      const cachedResults = getCachedResults(query);
      if (cachedResults) {
        console.log('Returning cached results');
+       
+       const processingTime = Date.now() - startTime;
+       
+       // *** IMPORTANT: Log cached searches too ***
+       console.log('📝 Logging cached search...');
+       await logSearchToDatabase(userId || null, query, cachedResults.length, processingTime);
+       
        return NextResponse.json({
          success: true,
          results: cachedResults,
          aiExplanation: `Found ${cachedResults.length} relevant SAP tables for "${query}" (cached - instant results).`,
-         processingTime: Date.now() - startTime
+         processingTime
        } as SearchResponse);
      }
 
@@ -274,17 +325,25 @@ export async function POST(request: NextRequest) {
     // Cache the results
     setCachedResults(query, results);
 
+    const processingTime = Date.now() - startTime;
+
+    // *** CRITICAL: Log the search to database ***
+    console.log('📝 About to log search to database...');
+    const logResult = await logSearchToDatabase(userId || null, query, results.length, processingTime);
+    console.log('📋 Search log result:', logResult);
+
     const response: SearchResponse = {
       success: true,
       results,
       aiExplanation,
-      processingTime: Date.now() - startTime
+      processingTime
     };
 
+    console.log('✅ Search API completed successfully');
     return NextResponse.json(response);
 
   } catch (error) {
-    console.error('Search API error:', error);
+    console.error('💥 Search API error:', error);
     
     return NextResponse.json({
       success: false,
