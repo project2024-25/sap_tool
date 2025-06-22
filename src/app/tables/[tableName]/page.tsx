@@ -384,7 +384,7 @@ export default function TableDetailsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {(userProfile?.subscription_type === 'free' 
+                      {(userProfile?.subscription_type === 'pro' 
                         ? tableDetails.fields.slice(0, 10) 
                         : tableDetails.fields
                       ).map((field, index) => (
