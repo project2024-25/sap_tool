@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Search, Zap, Database, Sparkles, Building2, AlertTriangle, Clock, ExternalLink } from 'lucide-react';
+import { Search, Zap, Database, Sparkles, Building2, AlertTriangle, Clock, ExternalLink, BookOpen } from 'lucide-react';
 
 interface SearchResult {
   tableName: string;
@@ -86,6 +86,10 @@ export default function HomePage() {
               <a href="#search" className="text-gray-600 hover:text-blue-600 transition-colors">Search</a>
               <a href="#erp-systems" className="text-gray-600 hover:text-blue-600 transition-colors">ERP Systems</a>
               <a href="#migration" className="text-gray-600 hover:text-blue-600 transition-colors">Migration</a>
+              <Link href="/blog" className="flex items-center space-x-1 text-gray-600 hover:text-blue-600 transition-colors">
+                <BookOpen className="h-4 w-4" />
+                <span>Blog</span>
+              </Link>
               <Link href="/auth/login" className="text-gray-600 hover:text-blue-600 transition-colors">
                 Sign In
               </Link>
@@ -98,10 +102,17 @@ export default function HomePage() {
             </nav>
             
             {/* Mobile menu button */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center space-x-3">
+              <Link 
+                href="/blog"
+                className="text-gray-600 hover:text-blue-600"
+                aria-label="Blog"
+              >
+                <BookOpen className="h-5 w-5" />
+              </Link>
               <Link 
                 href="/auth/login"
-                className="text-gray-600 hover:text-blue-600 mr-3"
+                className="text-gray-600 hover:text-blue-600"
               >
                 Sign In
               </Link>
@@ -118,6 +129,12 @@ export default function HomePage() {
             <span className="font-medium">
               ⏰ SAP ECC End of Life: {getYearsUntil2027()} years remaining until mandatory S/4HANA migration (January 2027)
             </span>
+            <Link 
+              href="/blog/sap-ecc-end-of-life-2027-consultant-guide"
+              className="ml-2 text-red-700 underline hover:text-red-900 text-sm"
+            >
+              Learn More →
+            </Link>
           </div>
         </div>
       </div>
@@ -143,6 +160,12 @@ export default function HomePage() {
               <span className="font-medium">
                 SAP ECC Migration Urgent: Get migration-ready table guidance with AI-powered 2027 deadline awareness
               </span>
+              <Link 
+                href="/blog"
+                className="ml-2 text-yellow-700 underline hover:text-yellow-900 text-sm whitespace-nowrap"
+              >
+                Read Migration Guide
+              </Link>
             </div>
           </div>
 
@@ -202,6 +225,12 @@ export default function HomePage() {
             <div className="flex items-center space-x-2">
               <Zap className="h-5 w-5 text-green-500" />
               <span>2027 Deadline Alerts</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <BookOpen className="h-5 w-5 text-purple-500" />
+              <Link href="/blog" className="hover:text-blue-600 transition-colors">
+                Migration Guides
+              </Link>
             </div>
           </div>
         </div>
@@ -476,6 +505,12 @@ export default function HomePage() {
                 <p className="text-xl text-gray-700">
                   Only <strong>{getYearsUntil2027()} years</strong> until mandatory S/4HANA migration
                 </p>
+                <Link 
+                  href="/blog/sap-ecc-vs-s4hana-complete-migration-guide"
+                  className="inline-block mt-2 text-red-600 hover:text-red-800 underline"
+                >
+                  Read Complete Migration Guide →
+                </Link>
               </div>
 
               <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -513,10 +548,17 @@ export default function HomePage() {
               <div className="text-center">
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
+                  className="inline-flex items-center px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors mr-4"
                 >
                   <AlertTriangle className="h-5 w-5 mr-2" />
                   Start Migration Planning Now
+                </Link>
+                <Link
+                  href="/blog"
+                  className="inline-flex items-center px-6 py-3 bg-white border-2 border-red-600 text-red-600 font-medium rounded-lg hover:bg-red-50 transition-colors"
+                >
+                  <BookOpen className="h-5 w-5 mr-2" />
+                  Read Migration Blog
                 </Link>
               </div>
             </div>
@@ -534,6 +576,7 @@ export default function HomePage() {
               <span className="text-gray-500 text-sm">AI-powered multi-ERP reference</span>
             </div>
             <div className="flex space-x-6 text-sm text-gray-600">
+              <Link href="/blog" className="hover:text-blue-600 transition-colors">Migration Blog</Link>
               <Link href="/oracle-tables" className="hover:text-blue-600 transition-colors">Oracle Tables</Link>
               <Link href="/dynamics-tables" className="hover:text-blue-600 transition-colors">Dynamics Tables</Link>
               <Link href="/pricing" className="hover:text-blue-600 transition-colors">Pricing</Link>
