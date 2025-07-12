@@ -1,94 +1,54 @@
-// src/app/blog/page.tsx - FIXED VERSION
+// src/app/blog/page.tsx - Updated to use enhanced blog data system
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Database, Calendar, User, Clock, Search, AlertTriangle, BookOpen } from 'lucide-react';
-
-// Blog article interface
-interface BlogArticle {
-  slug: string;
-  title: string;
-  excerpt: string;
-  category: string;
-  publishDate: string;
-  author: string;
-  readTime: number;
-  featured: boolean;
-}
-
-// Sample blog articles data (moved outside component to prevent re-creation)
-const blogArticles: BlogArticle[] = [
-  {
-    slug: 'sap-ecc-vs-s4hana-complete-migration-guide',
-    title: 'SAP ECC vs S/4HANA: Complete Table Migration Guide for 2027 Deadline',
-    excerpt: 'Everything SAP consultants need to know about table changes, deprecated structures, and migration strategies before the 2027 deadline.',
-    category: 'Migration',
-    publishDate: '2025-01-15',
-    author: 'SAP Migration Expert',
-    readTime: 12,
-    featured: true
-  },
-  {
-    slug: 'sap-ecc-end-of-life-2027-consultant-guide',
-    title: 'SAP ECC End of Life 2027: What Every Consultant Must Know',
-    excerpt: 'A comprehensive guide to the SAP ECC end-of-life deadline, business implications, and strategic recommendations for consultants.',
-    category: 'Strategy',
-    publishDate: '2025-01-10',
-    author: 'SAP Strategy Consultant',
-    readTime: 15,
-    featured: true
-  },
-  {
-    slug: 'acdoca-universal-journal-explained',
-    title: 'ACDOCA: SAP Universal Journal Complete Guide',
-    excerpt: 'Deep dive into ACDOCA table structure, what it replaces, and how it impacts your S/4HANA migration strategy.',
-    category: 'Technical',
-    publishDate: '2025-01-05',
-    author: 'SAP Technical Expert',
-    readTime: 10,
-    featured: false
-  }
-];
+import { getAllPosts, getFeaturedPosts, getCategories, searchPosts, type BlogPost } from '@/lib/blog/blog-data';
 
 export default function BlogIndexPage() {
-  const [articles, setArticles] = useState<BlogArticle[]>([]);
-  const [filteredArticles, setFilteredArticles] = useState<BlogArticle[]>([]);
+  const [allPosts, setAllPosts] = useState<BlogPost[]>([]);
+  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
+  const [featuredPosts, setFeaturedPosts] = useState<BlogPost[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get unique categories
-  const categories = ['All', ...Array.from(new Set(blogArticles.map(article => article.category)))];
-
-  // Initialize articles on component mount
+  // Initialize data on component mount
   useEffect(() => {
-    setArticles(blogArticles);
-    setFilteredArticles(blogArticles);
-    setIsLoading(false);
-  }, []); // Empty dependency array - runs once on mount
-
-  // Filter articles when category or search changes
-  useEffect(() => {
-    let filtered = articles;
-
-    // Filter by category
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(article => article.category === selectedCategory);
+    try {
+      const posts = getAllPosts();
+      const featured = getFeaturedPosts();
+      const cats = ['All', ...getCategories()];
+      
+      setAllPosts(posts);
+      setFilteredPosts(posts);
+      setFeaturedPosts(featured);
+      setCategories(cats);
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Error loading blog posts:', error);
+      setIsLoading(false);
     }
+  }, []);
 
-    // Filter by search query
+  // Filter posts when category or search changes
+  useEffect(() => {
+    let filtered = allPosts;
+
+    // Filter by search query first
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(article =>
-        article.title.toLowerCase().includes(query) ||
-        article.excerpt.toLowerCase().includes(query) ||
-        article.category.toLowerCase().includes(query)
-      );
+      filtered = searchPosts(searchQuery);
     }
 
-    setFilteredArticles(filtered);
-  }, [articles, selectedCategory, searchQuery]); // Dependencies that trigger filtering
+    // Then filter by category
+    if (selectedCategory !== 'All') {
+      filtered = filtered.filter(post => post.category === selectedCategory);
+    }
+
+    setFilteredPosts(filtered);
+  }, [allPosts, selectedCategory, searchQuery]);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
@@ -99,7 +59,19 @@ export default function BlogIndexPage() {
   };
 
   const getCurrentYear = () => new Date().getFullYear();
-  const getYearsUntil2027 = () => 2027 - getCurrentYear();
+  const getYearsUntil2027 = () => Math.max(0, 2027 - getCurrentYear());
+
+  // Convert BlogPost to display format
+  const formatPostForDisplay = (post: BlogPost) => ({
+    slug: post.slug,
+    title: post.title,
+    excerpt: post.excerpt,
+    category: post.category,
+    publishDate: post.publishedAt,
+    author: post.author,
+    readTime: parseInt(post.readTime.replace(' min', '')),
+    featured: post.featured || false
+  });
 
   if (isLoading) {
     return (
@@ -136,12 +108,20 @@ export default function BlogIndexPage() {
                 <p className="text-xs text-gray-500">Migration Authority Blog</p>
               </div>
             </Link>
-            <Link 
-              href="/" 
-              className="text-gray-600 hover:text-blue-600 transition-colors"
-            >
-              ← Back to Home
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/" 
+                className="text-gray-600 hover:text-blue-600 transition-colors"
+              >
+                Search Tables
+              </Link>
+              <Link 
+                href="/pricing" 
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Upgrade to Pro
+              </Link>
+            </div>
           </div>
         </div>
       </header>
@@ -169,6 +149,22 @@ export default function BlogIndexPage() {
             navigating the 2027 ECC end-of-life transition.
           </p>
           
+          {/* Stats */}
+          <div className="flex flex-col sm:flex-row gap-8 justify-center mb-8">
+            <div className="text-center">
+              <div className="text-3xl font-bold text-blue-600">{allPosts.length}</div>
+              <div className="text-sm text-gray-600">Expert Articles</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-red-600">2027</div>
+              <div className="text-sm text-gray-600">ECC End of Life</div>
+            </div>
+            <div className="text-center">
+              <div className="text-3xl font-bold text-green-600">500+</div>
+              <div className="text-sm text-gray-600">Tables Covered</div>
+            </div>
+          </div>
+          
           {/* Newsletter Signup Preview */}
           <div className="bg-white rounded-lg p-6 max-w-md mx-auto border shadow-sm">
             <h3 className="font-semibold text-gray-900 mb-2">📧 SAP Migration Weekly</h3>
@@ -180,22 +176,84 @@ export default function BlogIndexPage() {
                 type="email" 
                 placeholder="your@email.com" 
                 className="flex-1 px-3 py-2 border rounded-lg text-sm"
-                disabled
               />
               <button 
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
-                disabled
               >
-                Coming Soon
+                Subscribe
               </button>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Featured Articles Section */}
+      {featuredPosts.length > 0 && (
+        <section className="py-12 bg-white">
+          <div className="max-w-6xl mx-auto px-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">🔥 Featured Articles</h2>
+            <div className="grid md:grid-cols-2 gap-8">
+              {featuredPosts.slice(0, 2).map((post) => {
+                const displayPost = formatPostForDisplay(post);
+                return (
+                  <article key={post.slug} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6 border-2 border-blue-100 hover:border-blue-200 transition-colors">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="bg-blue-600 text-white px-2 py-1 rounded text-xs font-medium">
+                        Featured
+                      </span>
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        post.category === 'Migration' ? 'bg-red-100 text-red-700' :
+                        post.category === 'Career' ? 'bg-yellow-100 text-yellow-700' :
+                        post.category === 'Technical' ? 'bg-blue-100 text-blue-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {post.category}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-gray-900 mb-3 leading-tight">
+                      <Link 
+                        href={`/blog/${post.slug}`}
+                        className="hover:text-blue-600 transition-colors"
+                      >
+                        {post.title}
+                      </Link>
+                    </h3>
+                    
+                    <p className="text-gray-600 mb-4 line-clamp-2">
+                      {post.excerpt}
+                    </p>
+                    
+                    <div className="flex items-center text-xs text-gray-500 gap-4 mb-4">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {new Date(post.publishedAt).toLocaleDateString()}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {post.readTime}
+                      </span>
+                    </div>
+                    
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+                    >
+                      Read Article →
+                    </Link>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Search and Filters */}
-      <section className="py-8">
+      <section className="py-8 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">All Articles</h2>
+          
           <div className="flex flex-col md:flex-row gap-4 mb-8">
             {/* Search */}
             <div className="relative flex-1">
@@ -230,7 +288,7 @@ export default function BlogIndexPage() {
           {/* Results count */}
           <div className="mb-6">
             <p className="text-gray-600">
-              {filteredArticles.length} article{filteredArticles.length !== 1 ? 's' : ''} found
+              {filteredPosts.length} article{filteredPosts.length !== 1 ? 's' : ''} found
               {selectedCategory !== 'All' && ` in ${selectedCategory}`}
               {searchQuery && ` matching "${searchQuery}"`}
             </p>
@@ -239,71 +297,75 @@ export default function BlogIndexPage() {
       </section>
 
       {/* Articles Grid */}
-      <section className="pb-16">
+      <section className="pb-16 bg-gray-50">
         <div className="max-w-6xl mx-auto px-4">
-          {filteredArticles.length > 0 ? (
+          {filteredPosts.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredArticles.map((article) => (
-                <article key={article.slug} className="bg-white rounded-lg shadow-sm border hover:shadow-lg transition-shadow">
-                  <div className="p-6">
-                    {/* Category and Featured Badge */}
-                    <div className="flex items-center justify-between mb-3">
-                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                        article.category === 'Migration' ? 'bg-red-100 text-red-700' :
-                        article.category === 'Strategy' ? 'bg-yellow-100 text-yellow-700' :
-                        article.category === 'Technical' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {article.category}
-                      </span>
-                      {article.featured && (
-                        <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                          Featured
+              {filteredPosts.map((post) => {
+                const displayPost = formatPostForDisplay(post);
+                return (
+                  <article key={post.slug} className="bg-white rounded-lg shadow-sm border hover:shadow-lg transition-shadow">
+                    <div className="p-6">
+                      {/* Category and Featured Badge */}
+                      <div className="flex items-center justify-between mb-3">
+                        <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                          post.category === 'Migration' ? 'bg-red-100 text-red-700' :
+                          post.category === 'Career' ? 'bg-yellow-100 text-yellow-700' :
+                          post.category === 'Technical' ? 'bg-blue-100 text-blue-700' :
+                          post.category === 'Reference' ? 'bg-green-100 text-green-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {post.category}
                         </span>
-                      )}
-                    </div>
+                        {post.featured && (
+                          <span className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                            Featured
+                          </span>
+                        )}
+                      </div>
 
-                    {/* Title */}
-                    <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
-                      <Link 
-                        href={`/blog/${article.slug}`}
-                        className="hover:text-blue-600 transition-colors"
+                      {/* Title */}
+                      <h2 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 leading-tight">
+                        <Link 
+                          href={`/blog/${post.slug}`}
+                          className="hover:text-blue-600 transition-colors"
+                        >
+                          {post.title}
+                        </Link>
+                      </h2>
+
+                      {/* Excerpt */}
+                      <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                        {post.excerpt}
+                      </p>
+
+                      {/* Meta Information */}
+                      <div className="flex items-center text-xs text-gray-500 gap-4 mb-4">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(post.publishedAt).toLocaleDateString()}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          {post.author}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {post.readTime}
+                        </span>
+                      </div>
+
+                      {/* Read More Link */}
+                      <Link
+                        href={`/blog/${post.slug}`}
+                        className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
                       >
-                        {article.title}
+                        Read Article →
                       </Link>
-                    </h2>
-
-                    {/* Excerpt */}
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                      {article.excerpt}
-                    </p>
-
-                    {/* Meta Information */}
-                    <div className="flex items-center text-xs text-gray-500 gap-4 mb-4">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(article.publishDate).toLocaleDateString()}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <User className="w-3 h-3" />
-                        {article.author}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {article.readTime} min
-                      </span>
                     </div>
-
-                    {/* Read More Link */}
-                    <Link
-                      href={`/blog/${article.slug}`}
-                      className="inline-flex items-center text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
-                    >
-                      Read Article →
-                    </Link>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">
@@ -347,10 +409,10 @@ export default function BlogIndexPage() {
               Explore SAP Tables
             </Link>
             <Link
-              href="/auth/register"
+              href="/pricing"
               className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-600 border-2 border-blue-600 font-medium rounded-lg hover:bg-blue-50 transition-colors"
             >
-              Get Started Free
+              Upgrade to Pro
             </Link>
           </div>
         </div>
@@ -366,9 +428,8 @@ export default function BlogIndexPage() {
             </div>
             <div className="flex space-x-6 text-sm text-gray-600">
               <Link href="/" className="hover:text-blue-600 transition-colors">Home</Link>
-              <Link href="/auth/register" className="hover:text-blue-600 transition-colors">Sign Up</Link>
               <Link href="/pricing" className="hover:text-blue-600 transition-colors">Pricing</Link>
-              <a href="#" className="hover:text-blue-600 transition-colors">Contact</a>
+              <a href="mailto:hello@erptables.io" className="hover:text-blue-600 transition-colors">Contact</a>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-gray-100 text-center text-sm text-gray-500">

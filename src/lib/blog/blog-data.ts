@@ -1,366 +1,364 @@
-// src/lib/blog/blog-data.ts
-export interface BlogArticle {
+// src/lib/blog/blog-data.ts - Enhanced version of your existing file
+export interface BlogPost {
     slug: string;
     title: string;
     excerpt: string;
-    content: string;
-    htmlContent: string;
-    category: string;
-    publishDate: string;
     author: string;
-    readTime: number;
-    featured: boolean;
-    migrationUrgent: boolean;
-    seoTitle: string;
-    seoDescription: string;
-    keywords: string[];
-    lastUpdated?: string;
+    publishedAt: string;
+    readTime: string;
+    category: 'Migration' | 'Career' | 'Technical' | 'Reference' | 'Tutorial';
+    tags: string[];
+    content: string;
+    featured?: boolean;
+    status?: 'published' | 'draft';
+    seoKeywords?: string[];
   }
   
-  // Blog articles database
-  const blogArticles: Record<string, BlogArticle> = {
-    'sap-ecc-vs-s4hana-complete-migration-guide': {
-      slug: 'sap-ecc-vs-s4hana-complete-migration-guide',
-      title: 'SAP ECC vs S/4HANA: Complete Table Migration Guide for 2025',
-      excerpt: 'Comprehensive guide covering table changes, deprecated tables, and migration strategies for the 2027 deadline. Includes practical checklists and timeline recommendations.',
-      content: `# SAP ECC vs S/4HANA: Complete Table Migration Guide for 2025
+  export const blogPosts: BlogPost[] = [
+    {
+      slug: 'sap-ecc-vs-s4hana-migration-guide',
+      title: 'SAP ECC vs S/4HANA: Complete Table Migration Guide for 2027 Deadline',
+      excerpt: 'Everything SAP consultants need to know about table changes, deprecations, and migration paths before the 2027 ECC end-of-life deadline.',
+      author: 'SAP Migration Team',
+      publishedAt: '2025-01-04',
+      readTime: '12 min',
+      category: 'Migration',
+      tags: ['SAP ECC', 'S/4HANA', 'Migration', 'Tables', '2027'],
+      featured: true,
+      status: 'published',
+      seoKeywords: ['SAP ECC migration', 'S/4HANA tables', 'SAP 2027 deadline', 'ACDOCA migration'],
+      content: `
+  # SAP ECC vs S/4HANA: Complete Table Migration Guide for 2027 Deadline
   
-  With SAP ECC reaching end of life in January 2027, organizations worldwide face a critical deadline for migrating to S/4HANA. This comprehensive guide focuses on the table-level changes that consultants and developers need to understand for successful migration projects.
+  ⚠️ **URGENT: SAP ECC mainstream maintenance ends January 2027** - just 2 years away. This comprehensive guide helps SAP consultants understand the critical table changes between ECC and S/4HANA.
   
-  ## The Critical Timeline
+  ## Executive Summary
   
-  **SAP ECC 6.0 support officially ends on January 31, 2027.** This isn't just another system upgrade—it's a mandatory migration that affects every SAP customer worldwide.
+  The transition from SAP ECC to S/4HANA involves significant table structure changes that will impact every SAP consultant's work. With the **January 2027 deadline** approaching, understanding these changes is no longer optional—it's essential for career continuity.
   
-  ### Key Dates to Remember:
-  - **2025:** Final year for ECC patches and updates
-  - **2026:** Last year for extended support options
-  - **January 31, 2027:** Complete end of life
+  ### Key Takeaways
+  - **ACDOCA replaces multiple FI tables** (BKPF, BSEG, FAGLFLEXA)
+  - **300+ tables deprecated** in S/4HANA conversion
+  - **Business process impacts** require consultant skill updates
+  - **Migration timeline** typically takes 12-18 months
   
-  ## Major Table Changes in S/4HANA
+  ## The ACDOCA Revolution: Universal Journal Impact
   
-  ### 1. ACDOCA: The Universal Journal Revolution
+  ### What Changed
+  S/4HANA's biggest table change is the introduction of **ACDOCA (Universal Journal)**, which consolidates multiple financial tables:
   
-  The most significant change in S/4HANA is the introduction of **ACDOCA** (Universal Journal), which fundamentally changes how financial data is stored:
+  **Replaced Tables:**
+  - **BKPF** (Accounting Document Header) → Integrated into ACDOCA
+  - **BSEG** (Accounting Document Segment) → Integrated into ACDOCA  
+  - **FAGLFLEXA** (General Ledger: Actual Line Items) → Replaced by ACDOCA
   
-  **What ACDOCA Replaces:**
-  - BKPF (Accounting Document Header)
-  - BSEG (Accounting Document Segment)  
-  - FAGLFLEXA (New General Ledger Line Items)
-  - Various CO line item tables
+  ### Business Impact for Consultants
+  - **Reporting logic changes:** Custom reports need complete rewriting
+  - **Data extraction:** New field mappings required
+  - **Integration points:** All FI interfaces affected
+  - **Performance gains:** Single table access vs. multiple joins
   
-  **Business Impact:**
-  - Real-time financial reporting
-  - Simplified data model
-  - Enhanced analytics capabilities
-  - Faster period-end closing
+  ## Critical Table Deprecations by Module
   
-  ### 2. Deprecated Tables in S/4HANA
+  ### Financial Accounting (FI)
+  | ECC Table | Status | S/4HANA Replacement | Migration Impact |
+  |-----------|---------|-------------------|------------------|
+  | BKPF | Deprecated | ACDOCA | High - Core FI processes |
+  | BSEG | Deprecated | ACDOCA | High - Line item reporting |
+  | FAGLFLEXA | Deprecated | ACDOCA | High - GL reporting |
+  | GLT0 | Deprecated | ACDOCA | Medium - Ledger totals |
   
-  Critical tables that are deprecated or significantly changed:
+  ### Materials Management (MM)
+  | ECC Table | Status | S/4HANA Replacement | Migration Impact |
+  |-----------|---------|-------------------|------------------|
+  | MBEW | Modified | Enhanced MBEW | Medium - Valuation |
+  | CKMLCR | Deprecated | New costing tables | High - Cost management |
   
-  **Financial Accounting:**
-  - **BKPF/BSEG** → Replaced by ACDOCA
-  - **FAGLFLEXA** → Enhanced with new fields
-  - **FAGLFLEXT** → Simplified structure
+  ## Migration Strategies for Consultants
   
-  **Material Management:**
-  - **MARD** → Enhanced plant data structure
-  - **MBEW** → Simplified valuation logic
-  - Material master tables restructured
+  ### 1. Greenfield Approach (New Implementation)
+  **Best for:** Organizations wanting clean start
+  **Timeline:** 12-18 months
+  **Consultant Impact:** Complete retraining required
+  **Advantages:** Latest S/4HANA features, clean data model
   
-  **Sales & Distribution:**
-  - Enhanced pricing tables
-  - Simplified condition technique
-  - New billing structures
-  
-  ## Migration Strategies
-  
-  ### 1. Greenfield Approach
-  **What it is:** Start fresh with S/4HANA best practices
-  **Pros:** 
-  - Clean slate implementation
-  - Latest best practices
-  - Optimal performance
-  
-  **Cons:**
-  - Longer implementation time
-  - Higher costs
-  - Data migration complexity
-  
-  ### 2. Brownfield Approach  
-  **What it is:** Convert existing ECC system in-place
-  **Pros:**
-  - Preserves customizations
-  - Faster timeline
-  - Lower upfront costs
-  
-  **Cons:**
-  - Carries forward technical debt
-  - May not leverage S/4HANA innovations
-  - Performance limitations
+  ### 2. Brownfield Approach (System Conversion)
+  **Best for:** Existing ECC systems with customizations
+  **Timeline:** 6-12 months  
+  **Consultant Impact:** Moderate retraining
+  **Advantages:** Preserves customizations, faster implementation
   
   ### 3. Bluefield Approach (Selective Data Transition)
-  **What it is:** Hybrid approach combining both strategies
-  **Pros:**
-  - Balanced transformation
-  - Selective modernization
-  - Risk mitigation
+  **Best for:** Complex landscapes with selective modernization
+  **Timeline:** 18-24 months
+  **Consultant Impact:** High complexity management
+  **Advantages:** Gradual transition, risk mitigation
   
-  **Cons:**
-  - Complex planning required
-  - Multiple workstreams
-  - Coordination challenges
+  ## Preparing for the 2027 Deadline
   
-  ## Table Migration Checklist
+  ### Immediate Actions (Q1 2025)
+  - **Assess current ECC landscape** - Document all customizations
+  - **Identify table dependencies** - Map critical business processes
+  - **Plan migration strategy** - Choose approach based on business needs
+  - **Budget planning** - Allocate resources for migration project
   
-  ### Phase 1: Assessment (6-12 months before)
-  - [ ] **Inventory all custom developments** using deprecated tables
-  - [ ] **Map table relationships** and dependencies  
-  - [ ] **Assess data quality** and cleanup requirements
-  - [ ] **Identify business process impacts**
-  - [ ] **Create migration timeline** with critical milestones
+  ### 6-Month Horizon (Q2-Q3 2025)
+  - **Start pilot projects** - Test migration approach on non-critical systems
+  - **Train team on S/4HANA** - Focus on table structure changes
+  - **Vendor evaluation** - Select implementation partners
+  - **Data quality assessment** - Clean up ECC data for migration
   
-  ### Phase 2: Preparation (3-6 months before)
-  - [ ] **Adapt custom ABAP code** for new table structures
-  - [ ] **Update interfaces** and integrations
-  - [ ] **Test with S/4HANA sandbox** environment
-  - [ ] **Train functional teams** on new processes
-  - [ ] **Prepare data conversion** scripts
+  ### 12-Month Horizon (Q4 2025-Q1 2026)
+  - **Begin migration project** - Full implementation start
+  - **Parallel testing** - Validate S/4HANA vs ECC results
+  - **User training** - Prepare business users for changes
+  - **Go-live preparation** - Final testing and cutover planning
   
-  ### Phase 3: Execution
-  - [ ] **Execute database conversion** 
-  - [ ] **Validate data integrity** across all modules
-  - [ ] **Test critical business processes**
-  - [ ] **Monitor system performance**
-  - [ ] **Address migration issues** promptly
+  ## Cost Implications of Delayed Migration
   
-  ### Phase 4: Post-Migration
-  - [ ] **Optimize performance** based on usage patterns
-  - [ ] **Train end users** on new features
-  - [ ] **Document lessons learned**
-  - [ ] **Plan next optimization** phases
+  ### Extended Support Costs
+  After January 2027, SAP offers extended support at premium pricing:
+  - **Years 1-2:** 2% of license fees annually
+  - **Years 3-5:** 4% of license fees annually  
+  - **Beyond Year 5:** 6% of license fees annually
   
-  ## Technical Implementation Guide
+  ### Business Risk Factors
+  - **No new functionality** - Stuck with current ECC features
+  - **Security vulnerabilities** - Limited security patches
+  - **Compliance issues** - Regulatory reporting challenges
+  - **Talent shortage** - Fewer ECC-skilled consultants available
   
-  ### ACDOCA Migration Specifics
-  
-  **Key Fields in ACDOCA:**
-  - RCLNT (Client)
-  - RBUKRS (Company Code)  
-  - GJAHR (Fiscal Year)
-  - DOCNR (Document Number)
-  - DOCLN (Document Line Item)
-  - RLDNR (Ledger)
-  
-  **Custom Code Changes Required:**
-  1. **Replace BKPF/BSEG joins** with ACDOCA queries
-  2. **Update field references** to new ACDOCA structure
-  3. **Modify reporting logic** for real-time access
-  4. **Adjust performance** considerations
-  
-  ### Example Code Migration
-  
-  **Before (ECC):**
-  \`\`\`abap
-  SELECT bkpf~bukrs, bkpf~belnr, bseg~buzei, bseg~dmbtr
-  FROM bkpf INNER JOIN bseg
-  ON bkpf~bukrs = bseg~bukrs
-  AND bkpf~belnr = bseg~belnr
-  AND bkpf~gjahr = bseg~gjahr
-  WHERE bkpf~bukrs = 'US01'.
-  \`\`\`
-  
-  **After (S/4HANA):**
-  \`\`\`abap
-  SELECT rbukrs, belnr, buzei, dmbtr
-  FROM acdoca
-  WHERE rbukrs = 'US01'
-  AND rldnr = '0L'.
-  \`\`\`
-  
-  ## Business Process Impact Analysis
-  
-  ### Financial Accounting
-  **Changes:**
-  - Period-end closing acceleration (days → hours)
-  - Real-time financial statements
-  - Enhanced cash flow reporting
-  - Simplified reconciliation
-  
-  **Action Required:**
-  - Retrain finance teams
-  - Update closing procedures
-  - Modify reporting templates
-  - Test reconciliation processes
-  
-  ### Management Accounting
-  **Changes:**
-  - Simplified cost center accounting
-  - Enhanced profitability analysis  
-  - Real-time margin analysis
-  - Integrated planning
-  
-  **Action Required:**
-  - Review cost allocation methods
-  - Update profitability reports
-  - Train controlling teams
-  - Validate allocation logic
-  
-  ## Common Migration Pitfalls
-  
-  ### 1. Underestimating Complexity
-  **Problem:** Assuming table changes are straightforward
-  **Solution:** Comprehensive impact analysis and testing
-  
-  ### 2. Inadequate Testing
-  **Problem:** Insufficient validation of migrated data
-  **Solution:** Multi-phase testing strategy with business validation
-  
-  ### 3. Poor Change Management
-  **Problem:** Users unprepared for new processes
-  **Solution:** Early and continuous training programs
-  
-  ### 4. Data Quality Issues
-  **Problem:** Migrating poor quality data
-  **Solution:** Data cleanup before migration
-  
-  ## Tools and Resources
-  
-  ### SAP Tools
-  - **SAP Readiness Check:** Automated assessment
-  - **SAP S/4HANA Migration Cockpit:** Data migration utility
-  - **Custom Code Migration:** ABAP analysis tools
-  - **SAP Activate:** Implementation methodology
-  
-  ### Third-Party Solutions
-  - Various migration accelerators
-  - Data quality tools
-  - Testing automation platforms
-  - Performance monitoring tools
-  
-  ## Next Steps for Your Migration
-  
-  ### Immediate Actions (This Quarter)
-  1. **Run readiness assessment** using SAP tools
-  2. **Inventory custom developments** affecting tables
-  3. **Plan migration timeline** based on business priorities
-  4. **Secure executive sponsorship** and budget approval
-  
-  ### Medium-term Planning (Next 6 months)  
-  1. **Select migration approach** (Greenfield/Brownfield/Bluefield)
-  2. **Engage implementation partner** if needed
-  3. **Begin data quality** improvement initiatives
-  4. **Start team training** on S/4HANA concepts
-  
-  ### Long-term Execution (12-18 months)
-  1. **Execute chosen migration** approach
-  2. **Monitor and optimize** post-migration
-  3. **Leverage new S/4HANA** capabilities
-  4. **Plan future enhancement** phases
-  
-  ## Conclusion
-  
-  The SAP ECC to S/4HANA migration represents a significant transformation opportunity. Understanding table-level changes is crucial for project success. The 2027 deadline is firm, making early planning essential.
-  
-  **Key Takeaways:**
-  - Start planning now - 2 years is not long for enterprise migrations
-  - Focus on ACDOCA changes as the highest impact area
-  - Invest in proper testing and change management
-  - Consider hybrid approaches for risk mitigation
-  
-  ## Get Expert Help
-  
-  Need assistance with your migration planning? Our AI-powered SAP table reference tool can help you:
-  - Analyze current table usage
-  - Understand migration impacts  
-  - Plan transformation strategy
-  - Access expert migration guidance
-  
-  [**Start Your Migration Analysis →**](/dashboard)
-  
-  ---
-  
-  *This article is updated regularly to reflect the latest S/4HANA developments and migration best practices. Last updated: January 2025.*`,
-      htmlContent: `<h1>SAP ECC vs S/4HANA: Complete Table Migration Guide for 2025</h1>
-  <p>With SAP ECC reaching end of life in January 2027, organizations worldwide face a critical deadline for migrating to S/4HANA. This comprehensive guide focuses on the table-level changes that consultants and developers need to understand for successful migration projects.</p>
-  <!-- Content would be converted to HTML here -->`,
-      category: 'Migration',
-      publishDate: '2025-01-04',
-      author: 'ERP Tables Team',
-      readTime: 12,
-      featured: true,
-      migrationUrgent: true,
-      seoTitle: 'SAP ECC vs S/4HANA Table Migration Guide 2025 | Complete Checklist & Timeline',
-      seoDescription: 'Comprehensive SAP ECC to S/4HANA table migration guide for 2025. Covers deprecated tables, ACDOCA changes, and 2027 deadline preparation with expert strategies.',
-      keywords: ['SAP migration', 'ECC S/4HANA', 'table migration', '2027 deadline', 'ACDOCA', 'SAP consultant', 'migration guide'],
-      lastUpdated: '2025-01-04'
+  Ready to explore SAP tables for your migration? Use our unlimited search tool to understand table relationships and migration impacts.
+      `
     },
-    
-    'sap-ecc-end-of-life-2027-consultant-guide': {
+    {
       slug: 'sap-ecc-end-of-life-2027-consultant-guide',
       title: 'SAP ECC End of Life 2027: What Every Consultant Must Know',
-      excerpt: 'Essential guide for SAP consultants covering timeline, business risks, migration options, and client communication strategies for the ECC sunset.',
-      content: `# SAP ECC End of Life 2027: What Every Consultant Must Know
-  
-  ## The Hard Truth
-  
-  SAP ECC 6.0 support ends on **January 31, 2027**. That's not a recommendation—it's a deadline. Every SAP customer must migrate to S/4HANA or face unsupported systems.
-  
-  As SAP consultants, we're on the front lines of this transformation. Here's what you need to know to guide your clients through this critical transition.
-  
-  <!-- Full article content would continue here -->`,
-      htmlContent: `<h1>SAP ECC End of Life 2027: What Every Consultant Must Know</h1><!-- HTML content -->`,
-      category: 'Migration',
-      publishDate: '2025-01-03',
-      author: 'ERP Tables Team',
-      readTime: 8,
+      excerpt: 'The definitive guide to SAP ECC\'s January 2027 deadline, its impact on consultant careers, and the urgent actions needed today.',
+      author: 'SAP Migration Team',
+      publishedAt: '2025-01-03',
+      readTime: '10 min',
+      category: 'Career',
+      tags: ['SAP ECC', 'End of Life', '2027', 'Career', 'Consulting'],
       featured: true,
-      migrationUrgent: true,
-      seoTitle: 'SAP ECC End of Life 2027: Consultant Guide | Timeline & Client Communication',
-      seoDescription: 'Essential SAP ECC end of life guide for consultants. Covers 2027 deadline, business risks, migration strategies, and client communication templates.',
-      keywords: ['SAP ECC end of life', '2027 deadline', 'SAP consultant', 'client communication', 'migration planning']
+      status: 'published',
+      seoKeywords: ['SAP ECC end of life', 'SAP consultant career', '2027 deadline', 'S/4HANA transition'],
+      content: `
+  # SAP ECC End of Life 2027: What Every Consultant Must Know
+  
+  🚨 **BREAKING: Just 24 months until SAP ECC mainstream maintenance ends** (January 31, 2027). This isn't just another SAP announcement—it's a career-defining moment for every SAP consultant.
+  
+  ## The Hard Reality: January 31, 2027
+  
+  On January 31, 2027, SAP will **end mainstream maintenance** for SAP ECC 6.0. This means:
+  - ❌ **No new functionality** will be developed
+  - ❌ **No new legal updates** for changing regulations  
+  - ❌ **Limited support** for critical issues
+  - ❌ **No security patches** except for critical vulnerabilities
+  
+  ### What This Means for Your Career
+  
+  **If you're still working primarily with ECC after 2027:**
+  - **Decreasing project opportunities** as clients migrate
+  - **Lower billing rates** for "legacy" system work  
+  - **Career stagnation** without modern SAP skills
+  - **Forced career transition** when ECC work disappears
+  
+  ## The Extended Support Trap
+  
+  SAP offers "extended support" beyond 2027, but at a steep price:
+  
+  | Period | Additional Cost | Business Reality |
+  |--------|----------------|------------------|
+  | 2027-2029 | 2% of license fees | Manageable but expensive |
+  | 2029-2032 | 4% of license fees | Significant budget strain |
+  | 2032+ | 6% of license fees | Unsustainable for most |
+  
+  **The Consultant Impact:**
+  - Clients on extended support have **frozen IT budgets**
+  - **No enhancement projects** during extended support periods
+  - **Limited consulting opportunities** for legacy systems
+  - **Skills become increasingly obsolete**
+  
+  ## Your 24-Month Action Plan
+  
+  ### Months 1-6 (Immediate: Q1-Q2 2025)
+  
+  #### Skills Assessment
+  - **Complete S/4HANA readiness assessment** - Know your gaps
+  - **Identify your strongest ECC modules** - Build from strength
+  - **Assess current project pipeline** - When do they end?
+  - **Research target S/4HANA specialization** - Pick your focus
+  
+  #### Learning Foundation
+  - **SAP Learning Hub subscription** - Official training paths
+  - **S/4HANA system access** - Hands-on practice essential
+  - **Join S/4HANA communities** - Network and learn
+  - **Attend migration webinars** - Stay current on methodology
+  
+  ### Months 7-12 (Building: Q3 2025-Q1 2026)
+  
+  #### Practical Experience
+  - **Volunteer for S/4HANA projects** - Even small roles count
+  - **Shadow experienced S/4HANA consultants** - Learn approaches
+  - **Practice with demo scenarios** - Build confidence
+  - **Document learning journey** - Blog/LinkedIn content
+  
+  #### Specialization Development
+  - **Choose focus area** - FI, MM, SD, or technical
+  - **Deep dive into ACDOCA** - If FI-focused
+  - **Master new reporting tools** - Embedded Analytics, SAC
+  - **Learn Fiori applications** - User experience focus
+  
+  ## Financial Impact of Transition
+  
+  ### Investment Required
+  - **Training costs:** $5,000-15,000 per year
+  - **Certification fees:** $2,000-5,000 total
+  - **Conference attendance:** $3,000-8,000 per year
+  - **Time investment:** 10-20 hours per week
+  - **Opportunity cost:** 20-30% rate reduction during transition
+  
+  ### Return on Investment
+  - **Rate increase:** 50-100% premium for S/4HANA skills
+  - **Project availability:** 5x more opportunities
+  - **Career longevity:** 10+ years extended viability
+  - **Market position:** Top-tier consultant status
+  
+  Ready to start your S/4HANA transition? Use our SAP table reference tool to understand the differences between ECC and S/4HANA table structures.
+      `
+    },
+    {
+      slug: 'acdoca-universal-journal-explained',
+      title: 'ACDOCA: SAP\'s Universal Journal Explained',
+      excerpt: 'Deep dive into ACDOCA, S/4HANA\'s revolutionary Universal Journal that replaces BKPF, BSEG, and multiple FI tables. Essential reading for financial consultants.',
+      author: 'SAP Migration Team',
+      publishedAt: '2025-01-02',
+      readTime: '15 min',
+      category: 'Technical',
+      tags: ['ACDOCA', 'Universal Journal', 'S/4HANA', 'FI', 'Tables'],
+      featured: false,
+      status: 'published',
+      seoKeywords: ['ACDOCA table', 'SAP Universal Journal', 'S/4HANA ACDOCA', 'BKPF BSEG replacement'],
+      content: `
+  # ACDOCA: SAP's Universal Journal Explained
+  
+  🎯 **ACDOCA is the most important table change in SAP history.** This single table revolutionizes financial data storage in S/4HANA, replacing multiple ECC tables and fundamentally changing how financial consultants work.
+  
+  ## What is ACDOCA?
+  
+  **ACDOCA (Accounting Document)** is S/4HANA's Universal Journal table that stores all financial postings in a single, unified structure. It represents SAP's most significant architectural change since the introduction of New GL.
+  
+  ### The Revolution in Numbers
+  - **1 table** replaces 6+ core FI tables
+  - **40+ fields** capture comprehensive transaction data
+  - **Real-time analytics** enabled through in-memory processing
+  - **100% of financial transactions** flow through ACDOCA
+  
+  ## What ACDOCA Replaces
+  
+  ### Primary Table Replacements
+  | ECC Table | Purpose | ACDOCA Integration |
+  |-----------|---------|-------------------|
+  | **BKPF** | Accounting Document Header | Header data merged into line items |
+  | **BSEG** | Accounting Document Line Items | Complete replacement |
+  | **FAGLFLEXA** | New GL Actual Data | Fully integrated |
+  | **FAGLFLEXT** | New GL Totals | Real-time aggregation |
+  
+  ## ACDOCA Table Structure Deep Dive
+  
+  ### Core Identification Fields
+  **Primary Key Components:**
+  - CLIENT - Client (000, 100, etc.)
+  - RLDNR - Ledger (0L = Leading Ledger)
+  - RBUKRS - Company Code
+  - GJAHR - Fiscal Year
+  - BELNR - Document Number
+  - DOCLN - Line Item Number (6 digits vs. 3 in BSEG)
+  
+  ### Financial Classification
+  **Account Assignment:**
+  - RACCT - Account Number (GL, Customer, Vendor)
+  - KTOSL - Transaction Key
+  - PRCTR - Profit Center
+  - SEGMENT - Segment for Segment Reporting
+  
+  ## Business Benefits of ACDOCA
+  
+  ### 1. Real-Time Financial Reporting
+  **ECC Challenge:** Financial reports required complex joins across BKPF, BSEG, FAGLFLEXA
+  **ACDOCA Solution:** Single table query with all data available immediately
+  
+  ### 2. Simplified Data Model
+  **ECC Challenge:** Understanding relationships between 6+ financial tables
+  **ACDOCA Solution:** All financial data in one logical structure
+  
+  ## ACDOCA Best Practices for Consultants
+  
+  ### Query Performance
+  **Essential Filters:**
+  - Always include RLDNR = '0L' (Leading Ledger)
+  - Include company code for performance
+  - Use fiscal year ranges
+  - Filter by posting date ranges
+  
+  Ready to explore ACDOCA structure? Use our SAP table reference tool to examine ACDOCA fields, understand the data model, and compare with traditional FI tables.
+      `
     }
-  };
+  ];
   
-  // Helper functions
-  export function getBlogArticle(slug: string): BlogArticle | null {
-    return blogArticles[slug] || null;
+  // Helper functions for blog management
+  export function getAllPosts(): BlogPost[] {
+    return blogPosts
+      .filter(post => post.status === 'published')
+      .sort((a, b) => new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime());
   }
   
-  export function getAllBlogArticles(): BlogArticle[] {
-    return Object.values(blogArticles).sort((a, b) => 
-      new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
-    );
+  export function getFeaturedPosts(): BlogPost[] {
+    return getAllPosts().filter(post => post.featured);
   }
   
-  export function getBlogArticlesByCategory(category: string): BlogArticle[] {
-    const articles = Object.values(blogArticles);
-    if (category === 'All') return articles;
-    return articles.filter(article => article.category === category);
+  export function getPostsByCategory(category: string): BlogPost[] {
+    return getAllPosts().filter(post => post.category === category);
   }
   
-  export function getFeaturedBlogArticles(): BlogArticle[] {
-    return Object.values(blogArticles).filter(article => article.featured);
+  export function getPostBySlug(slug: string): BlogPost | null {
+    const post = blogPosts.find(p => p.slug === slug);
+    if (!post || post.status !== 'published') {
+      return null;
+    }
+    return post;
   }
   
-  export function getRelatedArticles(currentSlug: string, limit: number = 3): BlogArticle[] {
-    const currentArticle = getBlogArticle(currentSlug);
-    if (!currentArticle) return [];
-    
-    return Object.values(blogArticles)
-      .filter(article => 
-        article.slug !== currentSlug && 
-        (article.category === currentArticle.category || article.migrationUrgent)
+  export function getRelatedPosts(currentSlug: string, limit: number = 3): BlogPost[] {
+    const currentPost = getPostBySlug(currentSlug);
+    if (!currentPost) return [];
+  
+    return getAllPosts()
+      .filter(post => post.slug !== currentSlug)
+      .filter(post => 
+        post.category === currentPost.category || 
+        post.tags.some(tag => currentPost.tags.includes(tag))
       )
       .slice(0, limit);
   }
   
-  // SEO helpers
-  export function generateBlogSitemap(): string[] {
-    return Object.values(blogArticles).map(article => `/blog/${article.slug}`);
+  export function searchPosts(query: string): BlogPost[] {
+    const searchTerm = query.toLowerCase();
+    return getAllPosts().filter(post => 
+      post.title.toLowerCase().includes(searchTerm) ||
+      post.excerpt.toLowerCase().includes(searchTerm) ||
+      post.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
+      post.content.toLowerCase().includes(searchTerm)
+    );
   }
   
-  export function getBlogCategories(): string[] {
-    const categories = new Set(Object.values(blogArticles).map(article => article.category));
-    return Array.from(categories);
+  export function getCategories(): string[] {
+    const categories = getAllPosts().map(post => post.category);
+    return Array.from(new Set(categories));
+  }
+  
+  export function getAllTags(): string[] {
+    const tags = getAllPosts().flatMap(post => post.tags);
+    return Array.from(new Set(tags));
   }
